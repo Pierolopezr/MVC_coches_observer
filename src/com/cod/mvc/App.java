@@ -1,6 +1,7 @@
 package com.cod.mvc;
 
 /**
+ * version 2.0
  * Clase principal
  */
 public class App {
