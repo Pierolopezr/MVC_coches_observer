@@ -1,5 +1,10 @@
+package com.cod.mvc.model;
+
 import java.util.ArrayList;
 
+/**
+ * PArte de la arquitectura MVC que maneja los datos
+ */
 public class Model {
     static ArrayList<Coche> parking = new ArrayList<>();
 
