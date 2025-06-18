@@ -1,94 +1,152 @@
-# Arquitectura MVC
+# Arquitectura MVC con Observer
 
-Aplicación que trabaja con objetos coches, modifica la velocidad y la muestra
+En esta rama utilizaremos el patrón Observer
+
+Los cambios de la velocidad que se hagan en el model
+serán observados por el Controller
+
+Para notificar a los observadores:
+
+* Notificamos a los observadores `notifyObservers(valor)`
+
+* se *dispara* en todos los observadores el método `update()`
 
 ---
-
-En esta rama está añadido los eventos en la IU
-
----
-### Diagrama de clases:
+## Diagrama de clases:
 
 ```mermaid
 classDiagram
-    class Coche {
+    class Observer {
+        +update(Coche coche)
+    }
+    class Observable {
+        notifyObserver(Coche coche)
+    }
+        class Coche {
         String: matricula
         String: modelo
         Integer: velocidad
     }
-      class Controller{
-          +main()
+      class Controller {
+          -Model: miModel
+          ObserverVelocidad: observoVelocidad
+          ObserverLimite: observoLimite
+          +cambiarVelocidad(String, Integer)
+          +crearCoche(String,String)
       }
-      class View {+muestraVelocidad(String, Integer)}
       class Model {
           ArrayList~Coche~: parking
+          ArrayList~Observer~: observers
           +crearCoche(String, String, String)
           +getCoche(String)
           +cambiarVelocidad(String, Integer)
           +getVelocidad(String)
+          +notifyObservers(Coche coche)
       }
+      class ObserverVelocidad { +update(Coche coche) }
+      class ObserverLimite { +update(Coche coche) }
+      Controller "1" *-- "1" ObserverVelocidad: association
+      Controller "1" *-- "1" ObserverLimite: association
+      Controller "1" *-- "1" Model : association
+      Model "1" *-- "1..n" Coche : association
+      Observable <|.. Model : implements
+      Observer <|.. ObserverVelocidad : implements
+      Observer <|.. ObserverLimite : implements
       
-      class IU { mostrarVentana()}
-      
-      class Dialog { mostrarVelocidad() }
-    Controller "1" *-- "1" Model : association
-    Controller "1" *-- "1" View : association
-    Model "1" *-- "1..n" Coche : association
-    View "1" *-- "1" IU : association
-    View "1" *-- "1" Dialog : association
 ```
 
 ---
 
-## Evento en el View
+## Diagrama de Secuencia
 
-Cuando ocurre un evento en la vista, el `controller` se tiene que enterar.
-Tenemos que tener en cuenta que en el MVC estricto, la vista no se comunica con el modelo.
-
-En el listener del botón llamamos al `controller`
+Que ocurre cuando se cambia la velocidad
 
 
 ```mermaid
 sequenceDiagram
-    actor usuario
     participant View
+    box gray Controlador
     participant Controller
+    participant ObservoVelocidad
+    end
     participant Model
     
-    usuario->>View: click! Crear coche
-    View->>Controller: el usuario quiere crear un coche
-    activate Controller
-    Controller->>Model: crea un coche, porfa
+    Controller->>Model: cambia la velociad, porfa
     activate Model
-    Model-->>Controller: Coche
+    Model->>ObservoVelocidad: Notificacion de cambio de velocidad
     deactivate Model
-    Controller->>View: ok, coche creado!
-    deactivate Controller
-    View-->>usuario: tu coche se creó!
+    activate ObservoVelocidad
+    ObservoVelocidad->>+View: Muestra la velocidad, porfa
+    deactivate ObservoVelocidad
+    activate View
+    View->>-View: Mostrando velocidad
+    deactivate View
 ```
 
-Ahora la parte de la Arquitectura de la vista, son tres clases
+El mismo diagrama con los nombres de los métodos
+
 ```mermaid
 sequenceDiagram
-    autonumber
-    actor usuario
-    box gray Vista con JFrame
-        participant IU
-        participant Dialog
-        participant View
-        end
-        
+    participant View
+    box gray Controlador
     participant Controller
+    participant observoVelocidad
+    end
     participant Model
 
-    usuario->>IU: click! Crear coche
-    IU->>Controller: crearCoche()
-    activate Controller
-    Controller->>Model: crearCoche
+    Controller->>Model: cambiarVelocidad()
     activate Model
-    Model-->>Controller: Coche
+    Model->>observoVelocidad: update()
     deactivate Model
-    Controller->>+View: mostrarVelocidad
-    deactivate Controller
-    View-->>-Dialog: mostrarVelocidad()
+    activate observoVelocidad
+    observoVelocidad->>+View: muestraVelocidad
+    deactivate observoVelocidad
+    activate View
+    View->>-View: sout
+    deactivate View
 ```
+
+Si sumamos otro observador (que vigile el limite de velocidad), entonces el `update()` será en paralelo (**par**)
+
+a todos los Observadores
+
+```mermaid
+sequenceDiagram
+    participant View
+    box gray Controlador
+    participant Controller
+    participant observoVelocidad
+    participant observoLimite
+    end
+    participant Model
+
+    Controller->>Model: cambiarVelocidad()
+    activate Model
+    par notificacion
+        Model->>observoVelocidad: update()
+    and notificacion
+        Model->>observoLimite: update()
+        end
+    deactivate Model
+    activate observoVelocidad
+    activate observoLimite
+    observoVelocidad->>+View: muestraVelocidad
+    deactivate observoVelocidad
+    observoLimite->>-observoLimite: sout
+    activate View
+    View->>-View: sout
+    deactivate View
+```
+
+---
+## Pasos para la configuración
+
+1. Model
+   * Implementar `Observable` en `Model`
+   * En el método en donde ocurra el cambio, notificamos a los observadores con:
+     * notifyObserver(valor)
+2. Crear una clase para cada observador, que implementa la interface `Observer`
+    * definir el método `update()`
+3. Controller
+    * Instanciar el observer, definido en el punto anterior
+    * Añadir este observer al observable con `addObserver()` en el `Model`

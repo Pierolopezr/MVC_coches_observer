@@ -1,41 +1,49 @@
 package com.cod.mvc.controller;
 
-import com.cod.mvc.model.Coche;
 import com.cod.mvc.model.Model;
-import com.cod.mvc.view.View;
 
-/**
- * Lógica de la aplicación
- * No instanciamos la vista ni el modelo
- * usamos todo static
- */
-public class Controller {
+public class Controller{
+
+    // definimos la instancia del modelo
+    private final Model miModel;
 
     /**
-     * Crea un coche y manda mensaje a la vista para el usuario
-     * @param modelo del coche a crear
-     * @param matricula identificador único del coche
+     * Constructor. Inicializamos el controller
+     * Creamos los observadores que necesitamos
+     * @param miModel
      */
-    public static void crearCoche(String modelo, String matricula){
-        Coche aux = Model.crearCoche(modelo, matricula);
+    public Controller(Model miModel){
+        this.miModel = miModel;
 
-        // muestra la velocidad del coche creado
-        if (aux != null) View.mostrarVelocidad(aux.matricula, aux.velocidad);
+        // instanciamos al observador de la velocidad
+        ObserverVelocidad observoVelocidad = new ObserverVelocidad(miModel);
+        miModel.addObserver(observoVelocidad);
 
-        // TODO mandar mensaje de error si no fue posible crear el coche
+        // instanciamos un segundo observador para el limite de velocidad
+        ObserverLimite observoLimite = new ObserverLimite(miModel);
+        miModel.addObserver(observoLimite);
     }
 
     /**
-     * Cambia velocidad segun matricula
-     * @param matricula del coche a cambiar velocidad
-     * @param velocidad nueva del coche
+     * Crea un coche
+     * @param nombre del coche
+     * @param matricula del coche
      */
-    public static void cambiarVelocidad(String matricula, Integer velocidad){
-        Integer v_aux = Model.cambiarVelocidad(matricula, velocidad);
-
-        // muestra la velocidad del coche creado
-        if (v_aux != null) View.mostrarVelocidad(matricula, v_aux);
-
-        // TODO mandar mensaje de error si no fue posible cambiar la velocidad
+    public void crearCoche(String nombre, String matricula){
+        miModel.crearCoche(nombre, matricula);
     }
+
+    /**
+     * Cambia la velocidad de un coche
+     * @param matricula del coche
+     * @param velocidad nueva
+     */
+    public void cambiarVelocidad(String matricula, Integer velocidad){
+        miModel.cambiarVelocidad(matricula, velocidad);
+    }
+
+
+
+
+
 }
